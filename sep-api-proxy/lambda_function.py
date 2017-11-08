@@ -53,18 +53,22 @@ def build_target_upstream(event):
     except:
         print("No target upstream found for supplied base node: " + base_node)
 
-    if not target_upstream.endswith("/"):
-        target_upstream += "/"
+    if target_upstream:
+        target = None
+    else:
+        if not target_upstream.endswith("/"):
+            target_upstream += "/"
 
-    target_uri = target_upstream + proxy_path
+        target_uri = target_upstream + proxy_path
 
-    target = TargetRequest(method=http_method,
-                           uri=target_uri,
-                           query_string=query_params,
-                           headers=headers,
-                           body=body)
+        target = TargetRequest(method=http_method,
+                               uri=target_uri,
+                               query_string=query_params,
+                               headers=headers,
+                               body=body)
 
-    print("target: " + target.to_json())
+        print("target: " + target.to_json())
+
     return target
 
 def execute_upstream(target_request):
