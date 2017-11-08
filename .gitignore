@@ -1,3 +1,7 @@
+#macos
+*.DS_Store
+#testing artifacts
+*.zip
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
