@@ -35,7 +35,7 @@ class TargetRequest(JsonableObject):
         self.headers = headers
         self.body = body
 
-def build_target_upstream(event):
+def build_target_upstream(logger, event):
     """
     Given the incoming proxy+ api request & upstream list, define the upstream request to perform.
     """
@@ -52,10 +52,10 @@ def build_target_upstream(event):
     try:
         target_upstream = os.environ[base_node.replace("/", "")]
     except KeyError as kex:
-        logging.exception(kex)
-        logging.error("No target upstream found for supplied base node: %s", base_node)
+        logger.exception(kex)
+        logger.error("No target upstream found for supplied base node: %s", base_node)
 
-    if target_upstream:
+    if not target_upstream:
         target = None
     else:
         if not target_upstream.endswith("/"):
@@ -69,7 +69,7 @@ def build_target_upstream(event):
                                headers=headers,
                                body=body)
 
-        logging.info("target: %s", target.to_json())
+        logger.info("target: %s", target.to_json())
 
     return target
 
@@ -110,15 +110,23 @@ def lambda_handler(event, context):
     """
     Handle all incoming requests. Pass request details on to target API.
     """
-    logging.info("Received event: %s", json.dumps(event, indent=2))
+    logger = logging.getLogger()
+    logger.setLevel(logging.ERROR)
 
-    target = build_target_upstream(event)
+    logger.info("Received event: %s", json.dumps(event, indent=2))
+
+    target = build_target_upstream(logger, event)
     result = None
     if target:
-        result = execute_upstream(target)
-
-        logging.debug("body type: %s", type(result.content))
-        logging.info("result.content: %s", result.json())
+        try:
+            result = execute_upstream(target)
+        except Exception as ex:
+            logger.exception(ex)
+            return {
+                "statusCode": "500",
+                "body": "An error occurred."
+            }
+        logger.info("result.content: %s", result.json())
         return {
             "statusCode": result.status_code,
             "headers": {
@@ -128,4 +136,8 @@ def lambda_handler(event, context):
             "body": json.dumps(result.json())
         }
     else:
-        logging.error("No target built! Does Not Compute!")
+        logger.error("No target built! Does Not Compute!")
+
+
+if __name__ == "__main__":
+    pass
