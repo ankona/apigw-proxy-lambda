@@ -2,6 +2,17 @@
 *.DS_Store
 #testing artifacts
 *.zip
+#requirements folders
+certifi/
+certifi-*/
+chardet*/
+chardet-*/
+idna/
+idna-*/
+requests*/
+requests-*/
+urllib*/
+urllib-*/
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
