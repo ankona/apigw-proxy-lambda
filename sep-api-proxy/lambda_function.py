@@ -8,8 +8,6 @@ import json
 import logging
 import requests as req
 
-print('Loading sep-api-proxy function')
-
 class JsonableObject(object):
     """
     An object that can easily be serialized to json.
