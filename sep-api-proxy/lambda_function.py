@@ -17,7 +17,7 @@ class JsonableObject(object):
         Convert self to a json representation.
         """
         return json.dumps(self, default=lambda o: o.__dict__,
-                          sort_keys=True, indent=4)
+                          sort_keys=True, separators=(',',':'))
 
 class TargetRequest(JsonableObject):
     """
@@ -109,7 +109,7 @@ def lambda_handler(event, context):
     logger = logging.getLogger()
     logger.setLevel(logging.ERROR)
 
-    logger.info("Received event: %s", json.dumps(event, indent=2))
+    logger.info("Received event: %s", json.dumps(event, separators=(',',':')))
 
     target = build_target_upstream(logger, event)
     result = None
@@ -129,7 +129,7 @@ def lambda_handler(event, context):
                 "x-custom-header": "my val",
                 "content-type": "application/json"
             },
-            "body": json.dumps(result.json())
+            "body": json.dumps(result.json(), separators=(',', ':'))
         }
     else:
         logger.error("No target built! Does Not Compute!")
