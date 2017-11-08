@@ -25,14 +25,14 @@ class TargetRequest(JsonableObject):
     """
     Contains all information necessary to pass the request to an upstream endpoint.
     """
-    def __init__(self, method, uri, query_string, headers={}, body=""):
+    def __init__(self, method, uri, query_string, headers=None, body=""):
         """
         Initialize the object with all required properties.
         """
         self.method = method.lower()
         self.uri = uri.lower()
         self.query_string = query_string
-        self.headers = headers
+        self.headers = headers if headers else {}
         self.body = body
 
 def build_target_upstream(logger, event):
@@ -53,7 +53,7 @@ def build_target_upstream(logger, event):
         target_upstream = os.environ[base_node.replace("/", "")]
     except KeyError as kex:
         logger.exception(kex)
-        logger.error("No target upstream found for supplied base node: %s", base_node)
+        logger.error("No target upstream found. Add ENV var for supplied base node: %s", base_node)
 
     if not target_upstream:
         target = None
