@@ -53,9 +53,7 @@ def build_target_upstream(logger, event):
         logger.exception(kex)
         logger.error("No target upstream found. Add ENV var for supplied base node: %s", base_node)
 
-    if not target_upstream:
-        target = None
-    else:
+    if target_upstream:
         if not target_upstream.endswith("/"):
             target_upstream += "/"
 
