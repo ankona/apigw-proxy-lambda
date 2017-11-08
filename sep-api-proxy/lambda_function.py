@@ -5,6 +5,7 @@ and routes that traffic to upstream services defined in environment variables.
 """
 import os
 import json
+import logging
 import requests as req
 
 print('Loading sep-api-proxy function')
@@ -50,8 +51,9 @@ def build_target_upstream(event):
 
     try:
         target_upstream = os.environ[base_node.replace("/", "")]
-    except:
-        print("No target upstream found for supplied base node: " + base_node)
+    except KeyError as kex:
+        logging.exception(kex)
+        logging.error("No target upstream found for supplied base node: %s", base_node)
 
     if target_upstream:
         target = None
@@ -67,7 +69,7 @@ def build_target_upstream(event):
                                headers=headers,
                                body=body)
 
-        print("target: " + target.to_json())
+        logging.info("target: %s", target.to_json())
 
     return target
 
@@ -107,30 +109,23 @@ def execute_upstream(target_request):
 def lambda_handler(event, context):
     """
     Handle all incoming requests. Pass request details on to target API.
-
-    # sample target:
-    #   GET /enroll/api/data/countries -> todo: make it map over the /api (either by putting into env var or something else.)
-    #  http://enroll.dev.kaplanuniversity.edu:84/api/Data/Countries
     """
-    print("Received event: " + json.dumps(event, indent=2))
+    logging.info("Received event: %s", json.dumps(event, indent=2))
 
     target = build_target_upstream(event)
     result = None
-    if target:        
+    if target:
         result = execute_upstream(target)
+
+        logging.debug("body type: %s", type(result.content))
+        logging.info("result.content: %s", result.json())
+        return {
+            "statusCode": result.status_code,
+            "headers": {
+                "x-custom-header": "my val",
+                "content-type": "application/json"
+            },
+            "body": json.dumps(result.json())
+        }
     else:
-        print("No target built! Does Not Compute!")
-    
-    print("headers type: " + str(type(result.headers)))
-    print("body type: " + str(type(result.content)))
-    print("result.content: " + str(result.json()))
-    return {
-        "statusCode": result.status_code,
-        "headers": { 
-            "x-custom-header": "my val",
-            "content-type": "application/json"
-        },
-        # "headers": result.headers,
-        # "body": json.dumps(event, indent=2)
-        "body": json.dumps(result.json())
-    }
+        logging.error("No target built! Does Not Compute!")
