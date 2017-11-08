@@ -17,7 +17,7 @@ class JsonableObject(object):
         Convert self to a json representation.
         """
         return json.dumps(self, default=lambda o: o.__dict__,
-                          sort_keys=True, separators=(',',':'))
+                          sort_keys=True, separators=(',', ':'))
 
 class TargetRequest(JsonableObject):
     """
@@ -97,9 +97,6 @@ def execute_upstream(target_request):
         result = req.delete(target_request.uri)
     elif target_request.method == "options":
         result = req.options(target_request.uri)
-    # result.status_code
-    # result.headers
-    # result.content
     return result
 
 def lambda_handler(event, context):
@@ -108,8 +105,7 @@ def lambda_handler(event, context):
     """
     logger = logging.getLogger()
     logger.setLevel(logging.ERROR)
-
-    logger.info("Received event: %s", json.dumps(event, separators=(',',':')))
+    logger.info("Received event: %s", json.dumps(event, separators=(',', ':')))
 
     target = build_target_upstream(logger, event)
     result = None
