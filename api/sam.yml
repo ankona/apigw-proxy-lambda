@@ -1,0 +1,91 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+
+Parameters:
+  SecurityGroupId:
+    Type: CommaDelimitedList
+    
+  SubnetIds:
+    Type: List<AWS::EC2::Subnet::Id>
+  CodeBucket:
+    Type: String
+  CodeKey:
+    Type: String
+  RoleId:
+    Type: String
+  AuthLogonURI:
+    Type: String
+  Domain:
+    Type: String
+  BasePath:
+    Type: String
+
+Resources:
+  ProxyAPIBasePathMapping:
+    Type: AWS::ApiGateway::BasePathMapping
+    DependsOn: ProxyAPIprodStage
+    Properties:
+      BasePath: 
+        Ref: BasePath
+      DomainName: 
+        Ref: Domain
+      RestApiId: 
+        Ref: ProxyAPI
+      Stage: prod
+
+  ProxyAPI:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: prod
+      DefinitionBody:
+        swagger: "2.0"
+        info:
+          version: "1.0"
+          title: "sam-demo"
+        paths:
+          /auth/logon:
+            post:
+              responses: {}
+              x-amazon-apigateway-integration:
+                uri: 
+                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ApigwProxyLambda.Arn}/invocations
+                passthroughBehavior: "when_no_match"
+                httpMethod: "POST"
+                type: "aws_proxy"
+
+  ApigwProxyLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      Description: "Provide proxy access to VPC-based resources; forward incoming requests from API Gateway to upstream endpoints via mappings defined in environment variables."
+      Handler: lambda_function.lambda_handler
+      Runtime: python3.6
+      MemorySize: 128
+      Timeout: 10
+      Role: 
+        Ref: RoleId
+      VpcConfig:
+        SecurityGroupIds:
+          Ref: SecurityGroupId
+        SubnetIds:
+          Ref: SubnetIds
+      CodeUri:
+        Bucket: 
+          Ref: CodeBucket
+        Key: 
+          Ref: CodeKey
+      Environment:
+        Variables:
+          log_level: DEBUG
+          # Add an environment variable for each route mapping. Use underscore to replace forward slashes.
+          auth_logon:  
+            Ref: AuthLogonURI
+      Events:
+        AuthProxyResource:
+          Type: Api
+          Properties:
+            Path: /auth/logon
+            Method: POST
+            RestApiId: 
+              Ref: ProxyAPI
+
+
