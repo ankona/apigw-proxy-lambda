@@ -1,0 +1,51 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+
+Parameters:
+  SecurityGroupId:
+    Type: CommaDelimitedList
+    
+  SubnetIds:
+    Type: List<AWS::EC2::Subnet::Id>
+  CodeBucket:
+    Type: String
+  CodeKey:
+    Type: String
+  RoleId:
+    Type: String
+  AuthLogonURI:
+    Type: String
+
+Resources:
+  ApigwProxyLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: lambda_function.lambda_handler
+      Runtime: python3.6
+      MemorySize: 128
+      Timeout: 10
+      Role: 
+        Ref: RoleId
+      VpcConfig:
+        SecurityGroupIds:
+          Ref: SecurityGroupId
+        SubnetIds:
+          Ref: SubnetIds
+      CodeUri:
+        Bucket: 
+          Ref: CodeBucket
+        Key: 
+          Ref: CodeKey
+      Environment:
+        Variables:
+          log_level: DEBUG
+          auth_logon:  
+            Ref: AuthLogonURI
+      Events:
+        AuthProxyResource:
+          Type: Api
+          Properties:
+            Path: /auth/logon
+            Method: POST
+
+
