@@ -15,10 +15,44 @@ Parameters:
     Type: String
   AuthLogonURI:
     Type: String
+  Domain:
+    Type: String
+  BasePath:
+    Type: String
 
 Resources:
-  # ApiGatewayApi:
-  #   Type: AWS::Serverless::Api
+  ProxyAPIBasePathMapping:
+    Type: AWS::ApiGateway::BasePathMapping
+    DependsOn: ProxyAPIprodStage
+    Properties:
+      BasePath: 
+        Ref: BasePath
+      DomainName: 
+        Ref: Domain
+      RestApiId: 
+        Ref: ProxyAPI
+      Stage: prod
+
+  ProxyAPI:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: prod
+      DefinitionBody:
+        swagger: "2.0"
+        info:
+          version: "1.0"
+          title: "sam-demo"
+        paths:
+          /auth/logon:
+            post:
+              responses: {}
+              x-amazon-apigateway-integration:
+                uri: 
+                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ApigwProxyLambda.Arn}/invocations
+                passthroughBehavior: "when_no_match"
+                httpMethod: "POST"
+                type: "aws_proxy"
+
   ApigwProxyLambda:
     Type: AWS::Serverless::Function
     Properties:
@@ -51,5 +85,7 @@ Resources:
           Properties:
             Path: /auth/logon
             Method: POST
+            RestApiId: 
+              Ref: ProxyAPI
 
 
